@@ -15,8 +15,10 @@ import {
   RefreshCw,
   Layers,
   AlertTriangle,
-  CheckCircle,
+  CheckCircle2,
   XCircle,
+  Package,
+  X,
 } from "lucide-react";
 
 const ADMIN_USER = "admin";
@@ -38,7 +40,10 @@ export default function ProductVariantsPage() {
   const [addingVariant, setAddingVariant] = useState(false);
 
   const load = useCallback(() => {
-    if (!productId) return;
+    if (!Number.isSafeInteger(productId) || productId <= 0) {
+      setLoading(false);
+      return;
+    }
     setLoading(true);
     api
       .getProductById(productId)
@@ -63,16 +68,17 @@ export default function ProductVariantsPage() {
   const handleSaveStock = async (variant: ProductVariantDto) => {
     const newStockVal = parseInt(stockEdits[variant.id] ?? "0", 10);
     if (isNaN(newStockVal) || newStockVal < 0) {
-      showToast("error", "Stock must be a non-negative number.");
+      showToast("error", "Stock must be a non-negative integer.");
       return;
     }
     setSaving((s) => ({ ...s, [variant.id]: true }));
     try {
       await api.adjustStock(variant.id, newStockVal, ADMIN_USER);
-      showToast("success", `Stock updated to ${newStockVal}`);
+      showToast("success", `Vault stock updated to ${newStockVal} units.`);
       load();
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : "Failed to update stock";
+      const msg =
+        err instanceof Error ? err.message : "Failed to update stock";
       showToast("error", msg);
     } finally {
       setSaving((s) => ({ ...s, [variant.id]: false }));
@@ -84,20 +90,26 @@ export default function ProductVariantsPage() {
     if (!product) return;
     const stockNum = parseInt(newStock, 10);
     if (isNaN(stockNum) || stockNum < 0) {
-      showToast("error", "Stock must be a non-negative number.");
+      showToast("error", "Stock must be a non-negative integer.");
       return;
     }
     setAddingVariant(true);
     try {
-      await api.createProductVariant(product.id, newSize.trim(), newColor.trim(), stockNum, ADMIN_USER);
-      showToast("success", "Variant added successfully!");
+      await api.createProductVariant(
+        product.id,
+        newSize.trim(),
+        newColor.trim(),
+        stockNum,
+        ADMIN_USER
+      );
+      showToast("success", "New edition added to piece.");
       setNewSize("");
       setNewColor("");
       setNewStock("0");
       setShowAddForm(false);
       load();
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : "Failed to add variant";
+      const msg = err instanceof Error ? err.message : "Failed to add edition";
       showToast("error", msg);
     } finally {
       setAddingVariant(false);
@@ -108,9 +120,14 @@ export default function ProductVariantsPage() {
 
   if (!product) {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center gap-4">
-        <p className="text-gray-400 text-xl">Product not found</p>
-        <Link href="/admin/products" className="text-indigo-400">Back to products</Link>
+      <div className="min-h-[70dvh] flex flex-col items-center justify-center gap-4 px-4">
+        <h1 className="font-display text-3xl text-[#f5efe6]">Piece Not Found</h1>
+        <Link
+          href="/admin/products"
+          className="btn-luxury-gold min-h-11 px-6 py-2.5 rounded-xl text-sm"
+        >
+          Back to Inventory
+        </Link>
       </div>
     );
   }
@@ -118,182 +135,290 @@ export default function ProductVariantsPage() {
   const totalStock = product.variants.reduce((s, v) => s + v.stock, 0);
 
   return (
-    <div className="min-h-screen px-4 py-10">
+    <div className="min-h-dvh px-4 sm:px-6 lg:px-8 py-12">
       <div className="max-w-4xl mx-auto">
         {/* Breadcrumb */}
-        <div className="flex items-center gap-2 text-sm text-gray-500 mb-6">
-          <Link href="/admin" className="hover:text-gray-300 transition-colors">Dashboard</Link>
-          <ChevronRight className="w-3.5 h-3.5" />
-          <Link href="/admin/products" className="hover:text-gray-300 transition-colors">Products</Link>
-          <ChevronRight className="w-3.5 h-3.5" />
-          <span className="text-gray-300">{product.name}</span>
-        </div>
+        <nav
+          aria-label="Breadcrumb"
+          className="flex items-center gap-2 text-xs text-[#b8ada0] mb-6"
+        >
+          <Link href="/admin" className="hover:text-[#f5efe6] transition-colors">
+            Valsy Admin
+          </Link>
+          <ChevronRight
+            className="w-3.5 h-3.5 text-[#8c8073]"
+            aria-hidden="true"
+          />
+          <Link
+            href="/admin/products"
+            className="hover:text-[#f5efe6] transition-colors"
+          >
+            Products
+          </Link>
+          <ChevronRight
+            className="w-3.5 h-3.5 text-[#8c8073]"
+            aria-hidden="true"
+          />
+          <span className="text-[#e6c89c]" aria-current="page">
+            {product.name}
+          </span>
+        </nav>
 
         {/* Header */}
-        <div className="flex items-start justify-between mb-8">
-          <div className="flex items-center gap-3">
-            <Link href="/admin/products" className="text-gray-500 hover:text-white transition-colors">
-              <ArrowLeft className="w-5 h-5" />
+        <div className="flex flex-wrap items-start justify-between gap-4 mb-8 pb-6 border-b border-[#f5efe6]/10">
+          <div className="flex items-center gap-3.5">
+            <Link
+              href="/admin/products"
+              aria-label="Return to inventory"
+              className="w-10 h-10 rounded-xl bg-[#1a1714] border border-[#f5efe6]/12 flex items-center justify-center text-[#b8ada0] hover:text-[#f5efe6] transition-colors"
+            >
+              <ArrowLeft className="w-4 h-4" aria-hidden="true" />
             </Link>
             <div>
-              <h1 className="text-3xl font-black text-white">{product.name}</h1>
-              <div className="flex items-center gap-3 mt-1 text-sm text-gray-500">
-                <span className="text-indigo-400 font-semibold">${product.price.toFixed(2)}</span>
-                <span>·</span>
-                <span className="flex items-center gap-1">
-                  <Layers className="w-3.5 h-3.5" />
-                  {product.variants.length} variants
+              <h1 className="font-display text-3xl sm:text-4xl font-semibold text-[#f5efe6]">
+                {product.name}
+              </h1>
+              <div className="flex flex-wrap items-center gap-3 mt-1 text-xs text-[#b8ada0] tabular-nums">
+                <span className="text-[#e6c89c] font-semibold">
+                  ${product.price.toFixed(2)}
                 </span>
                 <span>·</span>
-                <span>{totalStock} units total</span>
+                <span className="inline-flex items-center gap-1">
+                  <Layers
+                    className="w-3.5 h-3.5 text-[#d4af7a]"
+                    aria-hidden="true"
+                  />
+                  {product.variants.length} editions
+                </span>
+                <span>·</span>
+                <span>{totalStock} units in vault</span>
               </div>
             </div>
           </div>
-          <div className="flex items-center gap-2">
+
+          <div className="flex items-center gap-2.5">
             <button
+              type="button"
               onClick={load}
-              className="p-2.5 rounded-xl border border-white/10 bg-white/5 hover:bg-white/10 text-gray-400 hover:text-white transition-all"
+              aria-label="Refresh editions"
+              className="w-11 h-11 rounded-xl border border-[#f5efe6]/12 bg-[#1a1714] hover:bg-[#231f1b] text-[#b8ada0] hover:text-[#f5efe6] flex items-center justify-center transition-colors cursor-pointer"
             >
-              <RefreshCw className="w-4 h-4" />
+              <RefreshCw className="w-4 h-4" aria-hidden="true" />
             </button>
             <button
+              type="button"
               onClick={() => setShowAddForm((s) => !s)}
-              className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 text-white font-semibold text-sm shadow-lg shadow-indigo-500/20 hover:shadow-indigo-500/40 hover:-translate-y-0.5 transition-all"
+              className="btn-luxury-gold inline-flex items-center gap-2 min-h-11 px-5 py-2.5 rounded-xl text-sm cursor-pointer"
             >
-              <Plus className="w-4 h-4" /> Add Variant
+              <Plus className="w-4 h-4" aria-hidden="true" /> Add Edition
             </button>
           </div>
         </div>
 
-        {/* Add Variant Form */}
+        {/* Collapsible New Edition Form */}
         {showAddForm && (
-          <div className="mb-6 rounded-2xl border border-indigo-500/25 bg-indigo-500/5 p-5">
-            <h3 className="text-sm font-bold text-indigo-300 mb-4">New Variant</h3>
-            <form onSubmit={handleAddVariant} className="grid sm:grid-cols-4 gap-3 items-end">
+          <div className="luxury-card mb-6 rounded-2xl border border-[#d4af7a]/35 p-6">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="font-display text-xl font-semibold text-[#e6c89c]">
+                Register New Edition
+              </h2>
+              <button
+                type="button"
+                aria-label="Close new edition form"
+                onClick={() => setShowAddForm(false)}
+                className="w-8 h-8 rounded-lg flex items-center justify-center text-[#b8ada0] hover:text-[#f5efe6]"
+              >
+                <X className="w-4 h-4" aria-hidden="true" />
+              </button>
+            </div>
+            <form
+              onSubmit={handleAddVariant}
+              className="grid sm:grid-cols-4 gap-3.5 items-end"
+            >
               <div>
-                <label className="block text-xs text-gray-400 mb-1.5">Size *</label>
+                <label
+                  htmlFor="new-variant-size"
+                  className="block text-xs text-[#b8ada0] mb-1.5"
+                >
+                  Size <span className="text-[#d4af7a]">*</span>
+                </label>
                 <input
+                  id="new-variant-size"
                   type="text"
                   value={newSize}
                   onChange={(e) => setNewSize(e.target.value)}
                   required
                   maxLength={50}
                   placeholder="S, M, L..."
-                  className="w-full px-3 py-2 rounded-lg bg-white/5 border border-white/10 text-white placeholder-gray-600 text-sm focus:outline-none focus:border-indigo-500/40 transition-all"
+                  className="w-full min-h-10 px-3 py-2 rounded-xl bg-[#12100e] border border-[#f5efe6]/12 text-[#f5efe6] placeholder-[#8c8073]/60 text-sm focus:outline-none focus:border-[#d4af7a]"
                 />
               </div>
               <div>
-                <label className="block text-xs text-gray-400 mb-1.5">Color *</label>
+                <label
+                  htmlFor="new-variant-color"
+                  className="block text-xs text-[#b8ada0] mb-1.5"
+                >
+                  Colorway <span className="text-[#d4af7a]">*</span>
+                </label>
                 <input
+                  id="new-variant-color"
                   type="text"
                   value={newColor}
                   onChange={(e) => setNewColor(e.target.value)}
                   required
                   maxLength={100}
-                  placeholder="Black, White..."
-                  className="w-full px-3 py-2 rounded-lg bg-white/5 border border-white/10 text-white placeholder-gray-600 text-sm focus:outline-none focus:border-indigo-500/40 transition-all"
+                  placeholder="Obsidian, Ivory..."
+                  className="w-full min-h-10 px-3 py-2 rounded-xl bg-[#12100e] border border-[#f5efe6]/12 text-[#f5efe6] placeholder-[#8c8073]/60 text-sm focus:outline-none focus:border-[#d4af7a]"
                 />
               </div>
               <div>
-                <label className="block text-xs text-gray-400 mb-1.5">Initial Stock</label>
+                <label
+                  htmlFor="new-variant-stock"
+                  className="block text-xs text-[#b8ada0] mb-1.5"
+                >
+                  Initial Vault Stock
+                </label>
                 <input
+                  id="new-variant-stock"
                   type="number"
                   value={newStock}
                   onChange={(e) => setNewStock(e.target.value)}
                   min="0"
-                  className="w-full px-3 py-2 rounded-lg bg-white/5 border border-white/10 text-white text-sm focus:outline-none focus:border-indigo-500/40 transition-all"
+                  className="w-full min-h-10 px-3 py-2 rounded-xl bg-[#12100e] border border-[#f5efe6]/12 text-[#f5efe6] text-sm focus:outline-none focus:border-[#d4af7a] tabular-nums"
                 />
               </div>
               <div className="flex gap-2">
                 <button
                   type="submit"
                   disabled={addingVariant}
-                  className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-medium transition-colors disabled:opacity-60"
+                  className="btn-luxury-gold flex-1 min-h-10 flex items-center justify-center gap-1.5 py-2 rounded-xl text-sm disabled:opacity-60 cursor-pointer"
                 >
-                  {addingVariant ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Plus className="w-3.5 h-3.5" />}
+                  {addingVariant ? (
+                    <Loader2
+                      className="w-3.5 h-3.5 animate-spin"
+                      aria-hidden="true"
+                    />
+                  ) : (
+                    <Plus className="w-3.5 h-3.5" aria-hidden="true" />
+                  )}
                   Add
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setShowAddForm(false)}
-                  className="px-3 py-2 rounded-lg border border-white/10 bg-white/5 text-gray-400 text-sm hover:bg-white/10 transition-all"
-                >
-                  ✕
                 </button>
               </div>
             </form>
           </div>
         )}
 
-        {/* Variants Table */}
+        {/* Editions Table */}
         {product.variants.length === 0 ? (
-          <div className="flex flex-col items-center py-16 gap-4">
-            <div className="w-14 h-14 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center text-xl">📦</div>
-            <p className="text-gray-400">No variants yet. Add one above.</p>
+          <div className="luxury-card rounded-3xl p-12 flex flex-col items-center gap-3 text-center">
+            <div className="w-12 h-12 rounded-2xl bg-[#231f1b] border border-[#d4af7a]/30 flex items-center justify-center">
+              <Package className="w-6 h-6 text-[#d4af7a]" aria-hidden="true" />
+            </div>
+            <p className="text-[#b8ada0] text-sm">
+              No editions registered yet. Use “Add Edition” above to allocate sizes and colorways.
+            </p>
           </div>
         ) : (
-          <div className="rounded-2xl border border-white/8 overflow-hidden">
-            {/* Table Header */}
-            <div className="grid grid-cols-12 gap-4 px-5 py-3 bg-white/3 border-b border-white/8">
-              <div className="col-span-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">Size</div>
-              <div className="col-span-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">Color</div>
-              <div className="col-span-2 text-xs font-semibold text-gray-500 uppercase tracking-wide">Status</div>
-              <div className="col-span-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">Stock</div>
+          <div className="luxury-card rounded-2xl overflow-hidden">
+            <div className="grid grid-cols-12 gap-4 px-6 py-3.5 bg-[#12100e]/60 border-b border-[#f5efe6]/10">
+              <div className="col-span-3 text-xs font-semibold text-[#b8ada0] uppercase tracking-[0.14em]">
+                Size
+              </div>
+              <div className="col-span-3 text-xs font-semibold text-[#b8ada0] uppercase tracking-[0.14em]">
+                Colorway
+              </div>
+              <div className="col-span-2 text-xs font-semibold text-[#b8ada0] uppercase tracking-[0.14em]">
+                Status
+              </div>
+              <div className="col-span-3 text-xs font-semibold text-[#b8ada0] uppercase tracking-[0.14em]">
+                Vault Units
+              </div>
               <div className="col-span-1"></div>
             </div>
 
             {product.variants.map((variant, i) => {
               const isLow = variant.stock > 0 && variant.stock <= 5;
               const isOut = variant.stock === 0;
-              const isDirty = stockEdits[variant.id] !== undefined && parseInt(stockEdits[variant.id], 10) !== variant.stock;
+              const isDirty =
+                stockEdits[variant.id] !== undefined &&
+                parseInt(stockEdits[variant.id], 10) !== variant.stock;
 
               return (
                 <div
                   key={variant.id}
-                  className={`grid grid-cols-12 gap-4 px-5 py-4 items-center hover:bg-white/2 transition-colors ${
-                    i !== product.variants.length - 1 ? "border-b border-white/5" : ""
+                  className={`grid grid-cols-12 gap-4 px-6 py-4 items-center hover:bg-[#231f1b]/50 transition-colors ${
+                    i !== product.variants.length - 1
+                      ? "border-b border-[#f5efe6]/6"
+                      : ""
                   }`}
                 >
-                  <div className="col-span-3 text-white font-semibold text-sm">{variant.size}</div>
-                  <div className="col-span-3 text-gray-300 text-sm">{variant.color}</div>
+                  <div className="col-span-3 text-[#f5efe6] font-semibold text-sm">
+                    {variant.size}
+                  </div>
+                  <div className="col-span-3 text-[#b8ada0] text-sm">
+                    {variant.color}
+                  </div>
                   <div className="col-span-2">
                     {isOut ? (
-                      <span className="flex items-center gap-1 text-xs text-red-400">
-                        <XCircle className="w-3.5 h-3.5" />Out
+                      <span className="inline-flex items-center gap-1.5 text-xs text-[#e69a9a]">
+                        <XCircle className="w-3.5 h-3.5" aria-hidden="true" />
+                        Out
                       </span>
                     ) : isLow ? (
-                      <span className="flex items-center gap-1 text-xs text-amber-400">
-                        <AlertTriangle className="w-3.5 h-3.5" />Low
+                      <span className="inline-flex items-center gap-1.5 text-xs text-[#eab676]">
+                        <AlertTriangle
+                          className="w-3.5 h-3.5"
+                          aria-hidden="true"
+                        />
+                        Low
                       </span>
                     ) : (
-                      <span className="flex items-center gap-1 text-xs text-emerald-400">
-                        <CheckCircle className="w-3.5 h-3.5" />OK
+                      <span className="inline-flex items-center gap-1.5 text-xs text-[#98c9a5]">
+                        <CheckCircle2
+                          className="w-3.5 h-3.5"
+                          aria-hidden="true"
+                        />
+                        Optimal
                       </span>
                     )}
                   </div>
                   <div className="col-span-3">
+                    <label
+                      htmlFor={`stock-input-${variant.id}`}
+                      className="sr-only"
+                    >
+                      Stock units for {variant.size} {variant.color}
+                    </label>
                     <input
+                      id={`stock-input-${variant.id}`}
                       type="number"
                       value={stockEdits[variant.id] ?? variant.stock}
                       onChange={(e) =>
-                        setStockEdits((s) => ({ ...s, [variant.id]: e.target.value }))
+                        setStockEdits((s) => ({
+                          ...s,
+                          [variant.id]: e.target.value,
+                        }))
                       }
                       min="0"
-                      className={`w-20 px-2 py-1.5 rounded-lg bg-white/5 border text-white text-sm text-center focus:outline-none focus:ring-1 transition-all ${
+                      className={`w-24 min-h-10 px-3 py-1.5 rounded-xl bg-[#12100e] border text-[#f5efe6] text-sm text-center focus:outline-none transition-colors tabular-nums ${
                         isDirty
-                          ? "border-indigo-500/50 focus:ring-indigo-500/20"
-                          : "border-white/10 focus:border-indigo-500/40"
+                          ? "border-[#d4af7a] bg-[#d4af7a]/10"
+                          : "border-[#f5efe6]/12 focus:border-[#d4af7a]"
                       }`}
                     />
                   </div>
                   <div className="col-span-1 flex justify-end">
                     <button
+                      type="button"
                       onClick={() => handleSaveStock(variant)}
                       disabled={!isDirty || saving[variant.id]}
-                      className="px-2.5 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-medium transition-all disabled:opacity-30 disabled:cursor-not-allowed flex items-center gap-1"
+                      className="btn-luxury-gold min-h-9 px-3.5 py-1.5 rounded-xl text-xs disabled:opacity-30 disabled:cursor-not-allowed flex items-center gap-1 cursor-pointer"
                     >
                       {saving[variant.id] ? (
-                        <Loader2 className="w-3 h-3 animate-spin" />
+                        <Loader2
+                          className="w-3.5 h-3.5 animate-spin"
+                          aria-hidden="true"
+                        />
                       ) : (
                         "Save"
                       )}
