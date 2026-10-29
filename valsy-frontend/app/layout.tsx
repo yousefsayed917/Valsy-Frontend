@@ -1,17 +1,15 @@
 import type { Metadata } from "next";
-import { Inter } from "next/font/google";
 import "./globals.css";
 import { CartProvider } from "@/components/CartProvider";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import { ToastContainer } from "@/components/Toast";
 
-const inter = Inter({ subsets: ["latin"], variable: "--font-sans" });
-
 export const metadata: Metadata = {
-  title: "Valsy — Premium Fashion",
-  description: "Discover premium fashion with Valsy. Shop the latest collections with style.",
-  keywords: ["fashion", "ecommerce", "clothing", "premium"],
+  title: "VALSY — Value You Deserve",
+  description:
+    "VALSY — Value you deserve. Discover premium fashion, natural textiles, and refined silhouettes crafted for enduring comfort and style.",
+  keywords: ["valsy", "fashion", "luxury", "clothing", "ecommerce"],
 };
 
 export default function RootLayout({
@@ -20,16 +18,39 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en" className={inter.variable}>
-      <body className="min-h-screen bg-[#0a0a0f] text-slate-200 antialiased overflow-x-hidden relative">
-        {/* Animated Background */}
-        <div className="fixed inset-0 pointer-events-none z-[-1] overflow-hidden">
-          <div className="absolute top-[-20%] left-[-10%] w-[50%] h-[50%] rounded-full bg-indigo-600/10 blur-[120px] animate-float-slow" />
-          <div className="absolute bottom-[-20%] right-[-10%] w-[50%] h-[50%] rounded-full bg-purple-600/10 blur-[120px] animate-float-slow-delay" />
+    <html lang="en" data-scroll-behavior="smooth">
+      <head>
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link
+          rel="preconnect"
+          href="https://fonts.gstatic.com"
+          crossOrigin="anonymous"
+        />
+        <link
+          rel="stylesheet"
+          href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;0,700;1,500;1,600&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap"
+        />
+      </head>
+      <body className="min-h-dvh bg-[#12100e] text-[#f5efe6] antialiased overflow-x-hidden relative selection:bg-[#d4af7a]/30">
+        {/* Accessible Skip Link */}
+        <a
+          href="#main-content"
+          className="sr-only focus:not-sr-only focus:fixed focus:top-4 focus:left-4 focus:z-[200] focus:px-5 focus:py-2.5 focus:rounded-xl focus:bg-[#d4af7a] focus:text-[#12100e] focus:font-semibold focus:shadow-2xl"
+        >
+          Skip to main content
+        </a>
+
+        {/* Warm Ambient Atelier Lighting (Subtle, eye-comfort glow) */}
+        <div className="fixed inset-0 pointer-events-none z-[-1] overflow-hidden" aria-hidden="true">
+          <div className="absolute top-[-18%] left-[12%] w-[52rem] h-[36rem] rounded-full bg-[#d4af7a]/[0.055] blur-[150px]" />
+          <div className="absolute bottom-[-22%] right-[8%] w-[46rem] h-[38rem] rounded-full bg-[#9c7a54]/[0.05] blur-[150px]" />
         </div>
+
         <CartProvider>
           <Navbar />
-          <main className="pt-16 relative z-0">{children}</main>
+          <main id="main-content" className="pt-24 relative z-0 min-h-[calc(100dvh-6rem)]">
+            {children}
+          </main>
           <Footer />
           <ToastContainer />
         </CartProvider>

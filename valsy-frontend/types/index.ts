@@ -17,7 +17,13 @@ export interface ProductDto {
 
 // ─── Order Types ───────────────────────────────────────────────────────────────
 
-export type OrderStatus = "Pending" | "Paid" | "Shipped" | "Delivered" | "Cancelled";
+export type OrderStatus =
+  | "Pending"
+  | "Submitted"
+  | "Paid"
+  | "Shipped"
+  | "Delivered"
+  | "Cancelled";
 
 export interface OrderItemDto {
   id: number;
